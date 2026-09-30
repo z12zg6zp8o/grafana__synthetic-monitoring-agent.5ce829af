@@ -56,7 +56,7 @@ func (r *Resolver) Resolve(ctx context.Context, value string) (string, error) {
 
 	// If secrets are disabled, just process variables in the entire string
 	if !r.secretEnabled {
-		return value, nil
+		return r.processVariables(value), nil
 	}
 
 	// Step 1: Find all secret matches with their positions
@@ -108,12 +108,12 @@ func (r *Resolver) Resolve(ctx context.Context, value string) (string, error) {
 
 		secretValue, err := r.secretProvider.GetSecretValue(ctx, r.tenantID, secretMatch.name)
 		if err != nil {
-			return "", fmt.Errorf("failed to get secret '%s' from GSM: %v", secretMatch.name, err)
+			return "", fmt.Errorf("failed to get secret '%s' from GSM: %w", secretMatch.name, err)
 		}
 
 		result.WriteString(secretValue)
 
-		lastPos = secretMatch.start
+		lastPos = secretMatch.end
 	}
 
 	// Process the remaining part after the last secret (non-secret part)
