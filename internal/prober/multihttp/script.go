@@ -153,7 +153,7 @@ func interpolateBodyVariables(bodyVarName string, body *sm.HttpRequestBody) []st
 func buildHeaders(headers []*sm.HttpHeader, body *sm.HttpRequestBody) string {
 	var buf strings.Builder
 
-	if len(headers) == 0 || body == nil {
+	if len(headers) == 0 && body == nil {
 		return ""
 	}
 
@@ -174,7 +174,7 @@ func buildHeaders(headers []*sm.HttpHeader, body *sm.HttpRequestBody) string {
 			buf.WriteString(comma)
 
 			buf.WriteString(`'Content-Encoding':"`)
-			buf.WriteString(template.JSEscapeString(body.ContentType))
+			buf.WriteString(template.JSEscapeString(body.ContentEncoding))
 			buf.WriteRune('"')
 
 			comma = ","
@@ -187,7 +187,7 @@ func buildHeaders(headers []*sm.HttpHeader, body *sm.HttpRequestBody) string {
 		buf.WriteRune('"')
 		buf.WriteString(template.JSEscapeString(header.Name))
 		buf.WriteString(`":`)
-		buf.WriteString(header.Value)
+		buf.WriteString(performVariableExpansion(header.Value))
 
 		comma = ","
 	}
