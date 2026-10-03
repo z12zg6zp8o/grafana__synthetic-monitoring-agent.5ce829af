@@ -60,7 +60,7 @@ func NewMetrics(promRegisterer prometheus.Registerer) (m Metrics) {
 			Name:      "push_errors_total",
 			Help:      "Total number of push errors by type and status.",
 		},
-		labelsWithTenantType)
+		labelsWithTenantTypeStatus)
 
 	promRegisterer.MustRegister(m.ErrorCounter)
 
@@ -79,7 +79,7 @@ func NewMetrics(promRegisterer prometheus.Registerer) (m Metrics) {
 		prometheus.CounterOpts{
 			Namespace: metricNamespace,
 			Subsystem: metricSubsystem,
-			Name:      "push_bytes_out",
+			Name:      "push_bytes",
 			Help:      "Total number of bytes pushed by type.",
 		},
 		labelsWithTenantType)
@@ -106,6 +106,8 @@ func NewMetrics(promRegisterer prometheus.Registerer) (m Metrics) {
 		},
 		labelsWithTenantType)
 
+	promRegisterer.MustRegister(m.DroppedCounter)
+
 	m.ResponseCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: metricNamespace,
@@ -113,7 +115,7 @@ func NewMetrics(promRegisterer prometheus.Registerer) (m Metrics) {
 			Name:      "responses_total",
 			Help:      "Total number of responses received by type and status code.",
 		},
-		labelsWithTenantType)
+		labelsWithTenantTypeStatus)
 
 	promRegisterer.MustRegister(m.ResponseCounter)
 
