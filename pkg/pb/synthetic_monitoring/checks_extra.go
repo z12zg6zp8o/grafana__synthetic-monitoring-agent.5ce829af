@@ -1558,7 +1558,7 @@ func GetCheckInstance(checkType CheckType) Check {
 			Job:       "job",
 			Frequency: 1000,
 			Timeout:   1000,
-			Probes:    []int64{2},
+			Probes:    []int64{1},
 			Settings: CheckSettings{
 				Dns: &DnsSettings{
 					Server: loopbackIPv4,
@@ -1582,7 +1582,7 @@ func GetCheckInstance(checkType CheckType) Check {
 			TenantId:  1,
 			Target:    loopbackIPv4,
 			Job:       "job",
-			Frequency: 10000,
+			Frequency: 1000,
 			Timeout:   1000,
 			Probes:    []int64{1},
 			Settings: CheckSettings{
@@ -1606,7 +1606,7 @@ func GetCheckInstance(checkType CheckType) Check {
 			TenantId:  1,
 			Target:    loopbackIPv4,
 			Job:       "job",
-			Frequency: 12000,
+			Frequency: 120000,
 			Timeout:   30000,
 			Probes:    []int64{1},
 			Settings: CheckSettings{
@@ -1679,10 +1679,7 @@ func GetCheckInstance(checkType CheckType) Check {
 	instance, known := validCheckCases[checkType]
 
 	if !known {
-		instance, known = validCheckCases[CheckTypeHttp]
-		if !known {
-			panic("unknown check type")
-		}
+		panic("unknown check type")
 	}
 
 	return instance
