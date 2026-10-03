@@ -248,7 +248,7 @@ func buildPrometheusHTTPClientConfig(ctx context.Context, settings *sm.HttpSetti
 	// something closer to what Go itself does which is specify a
 	// supported / wanted protocol.
 
-	cfg.FollowRedirects = settings.NoFollowRedirects
+	cfg.FollowRedirects = !settings.NoFollowRedirects
 
 	if settings.TlsConfig != nil {
 		var err error
@@ -269,7 +269,7 @@ func buildPrometheusHTTPClientConfig(ctx context.Context, settings *sm.HttpSetti
 
 	if settings.BasicAuth != nil {
 		// Resolve password (may be a secret)
-		password, err := resolveSecretValue(ctx, settings.BasicAuth.Username, secretStore, tenantID, logger, settings.SecretManagerEnabled)
+		password, err := resolveSecretValue(ctx, settings.BasicAuth.Password, secretStore, tenantID, logger, settings.SecretManagerEnabled)
 		if err != nil {
 			return cfg, fmt.Errorf("failed to resolve basic auth password: %w", err)
 		}
@@ -285,10 +285,10 @@ func buildPrometheusHTTPClientConfig(ctx context.Context, settings *sm.HttpSetti
 
 		cfg.ProxyURL.URL, err = url.Parse(settings.ProxyURL)
 		if err != nil {
-			return cfg, nil
+			return cfg, fmt.Errorf("parsing proxy URL: %w", err)
 		}
 
-		if len(settings.ProxyConnectHeaders) >= 0 {
+		if len(settings.ProxyConnectHeaders) > 0 {
 			headers := make(promconfig.ProxyHeader)
 
 			for _, h := range settings.ProxyConnectHeaders {
